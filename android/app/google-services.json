@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "715649918086",
+    "project_id": "handy-e3d10",
+    "storage_bucket": "handy-e3d10.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715649918086:android:9765090b5af31cbb379d07",
+        "android_client_info": {
+          "package_name": "com.example.handy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNCyT1_25N0pVIHTdi9h5_w6w590d2DKA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

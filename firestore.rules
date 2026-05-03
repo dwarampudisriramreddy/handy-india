@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper to check if user is admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'sriramreddydwarampudi@gmail.com';
+    }
+
+    // Helper to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Products: Anyone can read, only admin can write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Orders:
+    // - Admin can read/write all
+    // - Users can read/write their own orders
+    match /orders/{orderId} {
+      allow read, write: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
+      allow create: if isSignedIn();
+    }
+    
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
