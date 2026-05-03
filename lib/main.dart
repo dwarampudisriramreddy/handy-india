@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Image.asset(
           'lib/assets/company_logo.png',
           height: 40,
-          errorBuilder: (context, error, stackTrace) => const Text('Handy India Dental - Equipment Manufacturer'),
+          errorBuilder: (context, error, stackTrace) => const Text('Handy India'),
         ),
         actions: [
           StreamBuilder<User?>(
