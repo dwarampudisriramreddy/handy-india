@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'firebase_options.dart';
 import 'models/product.dart';
 import 'screens/product_detail_screen.dart';
@@ -208,8 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: videoProducts.length,
                       itemBuilder: (context, index) {
                         final product = videoProducts[index];
-                        final videoId = YoutubePlayer.convertUrlToId(product.videoUrl!);
-                        if (videoId == null) return const SizedBox.shrink();
                         
                         return GestureDetector(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product))),
@@ -218,38 +215,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             margin: const EdgeInsets.only(right: 16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              image: DecorationImage(
-                                image: NetworkImage('https://img.youtube.com/vi/$videoId/0.jpg'),
-                                fit: BoxFit.cover,
-                              ),
+                              color: Colors.grey.shade200,
                             ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                gradient: LinearGradient(
-                                  colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(Icons.play_circle_fill, color: Colors.red, size: 64),
+                                Positioned(
+                                  bottom: 12,
+                                  left: 12,
+                                  right: 12,
+                                  child: Text(
+                                    product.name,
+                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, backgroundColor: Colors.white70),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              child: Stack(
-                                children: [
-                                  const Center(
-                                    child: Icon(Icons.play_circle_fill, color: Colors.white, size: 64),
-                                  ),
-                                  Positioned(
-                                    bottom: 12,
-                                    left: 12,
-                                    right: 12,
-                                    child: Text(
-                                      product.name,
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
                           ),
                         );

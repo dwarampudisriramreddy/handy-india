@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:715649918086:android:9765090b5af31cbb379d07",
+        "mobilesdk_app_id": "1:715649918086:android:e994ed63964bd608379d07",
         "android_client_info": {
-          "package_name": "com.example.handy"
+          "package_name": "com.ram.handyindia"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "715649918086-qu2t1gv248fko6ulbpcg80iq3cm1oocn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBNCyT1_25N0pVIHTdi9h5_w6w590d2DKA"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "715649918086-qu2t1gv248fko6ulbpcg80iq3cm1oocn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "715649918086-8ac0r0n60apc4qor31tjpk4b8cum85si.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ram.handyindia"
+              }
+            }
+          ]
         }
       }
     }

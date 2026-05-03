@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 
@@ -45,7 +46,6 @@ class DashboardScreen extends StatelessWidget {
             actions: [
               IconButton(
                 onPressed: () {
-                  // Settings action
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Settings coming soon!')),
                   );
@@ -160,7 +160,16 @@ class DashboardScreen extends StatelessWidget {
                       icon: Icons.support_agent,
                       label: 'Technical Support',
                       color: Colors.purple,
-                      onTap: () => _showSupportDialog(context),
+                      onTap: () async {
+                        final Uri url = Uri.parse('https://wa.me/918712338488');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not open WhatsApp')),
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -197,59 +206,23 @@ class DashboardScreen extends StatelessWidget {
       },
     );
   }
-
-  void _showSupportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Contact Support'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.email),
-              title: Text('Email'),
-              subtitle: Text('support@handyindia.com'),
-            ),
-            ListTile(
-              leading: Icon(Icons.phone),
-              title: Text('Phone'),
-              subtitle: Text('+91 98765 43210'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-
   const _StatCard({required this.label, required this.value, required this.icon});
-
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Theme.of(context).primaryColor),
-          const SizedBox(height: 12),
+          Icon(icon, color: Colors.grey),
+          const SizedBox(height: 8),
           Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
@@ -263,36 +236,21 @@ class _ToolItem extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-
-  const _ToolItem({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
+  const _ToolItem({required this.icon, required this.label, required this.color, required this.onTap});
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color),
             const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           ],
         ),
       ),

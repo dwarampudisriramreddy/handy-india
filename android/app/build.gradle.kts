@@ -8,23 +8,23 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-android {
-    namespace = "com.example.handy"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+namespace = "com.ram.handyindia"
+compileSdk = flutter.compileSdkVersion
+ndkVersion = flutter.ndkVersion
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
+kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_17.toString()
+}
 
-    defaultConfig {
+defaultConfig {
+    applicationId = "com.ram.handyindia"
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.handy"
+        applicationId = "com.ram.handy"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
