@@ -13,21 +13,22 @@ class AuthService {
   Future<User?> signInWithGoogle() async {
     try {
       GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      googleProvider.addScope('email');
       
       if (kIsWeb) {
-        // Standard Web flow using Firebase standard Popup
-        // This is the most reliable method for Flutter Web
+        // Use signInWithPopup for Web
         final UserCredential userCredential = await _auth.signInWithPopup(googleProvider);
         return userCredential.user;
       } else {
-        // Universal flow for mobile using Provider
-        // This avoids the 'GoogleSignIn' constructor error entirely
+        // Use signInWithProvider for Mobile
         final UserCredential userCredential = await _auth.signInWithProvider(googleProvider);
         return userCredential.user;
       }
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
+      if (e is FirebaseAuthException) {
+        debugPrint('Firebase Auth Error Code: ${e.code}');
+        debugPrint('Firebase Auth Error Message: ${e.message}');
+      }
       return null;
     }
   }

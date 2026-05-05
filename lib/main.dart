@@ -7,9 +7,13 @@ import 'screens/product_detail_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin_panel.dart';
+import 'screens/product_summary_screen.dart';
+import 'screens/product_guide_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/currency_helper.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,13 +119,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Stream<List<Product>> _productsStream;
   final FirestoreService _firestoreService = FirestoreService();
+  ProductType? _selectedType;
 
   @override
   void initState() {
     super.initState();
-    _productsStream = _firestoreService.getProducts();
+  }
+
+  Widget _buildFilterChip(ProductType? type, String label) {
+    final isSelected = _selectedType == type;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 12,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (bool selected) {
+          setState(() {
+            _selectedType = type;
+          });
+        },
+        selectedColor: const Color(0xFFD32F2F),
+        backgroundColor: Colors.grey.shade100,
+        checkmarkColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide(color: isSelected ? const Color(0xFFD32F2F) : Colors.grey.shade300),
+      ),
+    );
   }
 
   @override
@@ -152,47 +183,40 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: StreamBuilder<List<Product>>(
-        stream: _productsStream,
+        stream: _firestoreService.getProducts(),
         builder: (context, snapshot) {
-          // Use a Map to deduplicate products by ID
-          final Map<String, Product> productMap = {
-            for (var p in mockProducts) p.id: p
-          };
-
-          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            for (var cloudProduct in snapshot.data!) {
-              final localProduct = productMap[cloudProduct.id];
-              if (localProduct != null) {
-                // Merge: Use cloud data but keep local video if cloud is missing it
-                productMap[cloudProduct.id] = Product(
-                  id: cloudProduct.id,
-                  name: cloudProduct.name,
-                  description: cloudProduct.description,
-                  price: cloudProduct.price,
-                  imageUrl: cloudProduct.imageUrl,
-                  videoUrl: (cloudProduct.videoUrl != null && cloudProduct.videoUrl!.isNotEmpty) 
-                      ? cloudProduct.videoUrl 
-                      : localProduct.videoUrl,
-                  imageGallery: cloudProduct.imageGallery.isNotEmpty ? cloudProduct.imageGallery : localProduct.imageGallery,
-                  features: cloudProduct.features.isNotEmpty ? cloudProduct.features : localProduct.features,
-                  type: cloudProduct.type,
-                  specs: cloudProduct.specs.isNotEmpty ? cloudProduct.specs : localProduct.specs,
-                  comparableSpecs: cloudProduct.comparableSpecs.isNotEmpty ? cloudProduct.comparableSpecs : localProduct.comparableSpecs,
-                  isFeatured: cloudProduct.isFeatured,
-                );
-              } else {
-                productMap[cloudProduct.id] = cloudProduct;
-              }
-            }
-          }
-
-          final List<Product> displayProducts = productMap.values.toList();
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          
+          final List<Product> displayProducts = snapshot.data!;
+          final List<Product> filteredProducts = _selectedType == null 
+              ? displayProducts 
+              : displayProducts.where((p) => p.type == _selectedType).toList();
+              
           final List<Product> videoProducts = displayProducts.where((p) => p.videoUrl != null && p.videoUrl!.isNotEmpty).toList();
 
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Category Filter Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        _buildFilterChip(null, 'All'),
+                        _buildFilterChip(ProductType.camera, 'Cameras'),
+                        _buildFilterChip(ProductType.rvg, 'RVG Sensors'),
+                        _buildFilterChip(ProductType.xRay, 'X-Ray Units'),
+                        _buildFilterChip(ProductType.accessory, 'Accessories'),
+                      ],
+                    ),
+                  ),
+                ),
+                
                 // Product Videos Section
                 if (videoProducts.isNotEmpty) ...[
                   const Padding(
@@ -200,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text('Product Demos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   SizedBox(
-                    height: 200,
+                    height: 220,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -208,42 +232,36 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final product = videoProducts[index];
                         
-                        return GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product))),
-                          child: Container(
-                            width: 300,
-                            margin: const EdgeInsets.only(right: 16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Colors.grey.shade200,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Icon(Icons.play_circle_fill, color: Colors.red, size: 64),
-                                Positioned(
-                                  bottom: 12,
-                                  left: 12,
-                                  right: 12,
-                                  child: Text(
-                                    product.name,
-                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, backgroundColor: Colors.white70),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
+                        return _ProductVideoItem(product: product);
                       },
                     ),
                   ),
                 ],
                 // Featured Products
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Text('Featured Imaging Solutions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedType == null 
+                            ? 'Featured Imaging Solutions' 
+                            : '${_selectedType!.name.toUpperCase()} Solutions', 
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ProductSummaryScreen(isAdmin: false)),
+                          );
+                        },
+                        icon: const Icon(Icons.compare_arrows, size: 18),
+                        label: const Text('Compare All', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(foregroundColor: const Color(0xFFD32F2F)),
+                      ),
+                    ],
+                  ),
                 ),
                 GridView.builder(
                   shrinkWrap: true,
@@ -255,10 +273,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
-                  itemCount: displayProducts.length,
+                  itemCount: filteredProducts.length,
                   itemBuilder: (context, index) {
-                    return _ProductCard(product: displayProducts[index]);
+                    return _ProductCard(product: filteredProducts[index]);
                   },
+                ),
+                const SizedBox(height: 16),
+                
+                // Bottom Guide Me Button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final all = snapshot.data!;
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ProductGuideScreen(allProducts: all)));
+                    },
+                    icon: const Icon(Icons.help_outline),
+                    label: const Text('Guide me to the right product'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD32F2F),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
               ],
@@ -270,23 +307,81 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _CategoryItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _CategoryItem({required this.icon, required this.label});
+class _ProductVideoItem extends StatefulWidget {
+  final Product product;
+  const _ProductVideoItem({required this.product});
+
+  @override
+  State<_ProductVideoItem> createState() => _ProductVideoItemState();
+}
+
+class _ProductVideoItemState extends State<_ProductVideoItem> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!)!;
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: videoId,
+      autoPlay: false,
+      params: const YoutubePlayerParams(
+        mute: false,
+        showControls: true,
+        showFullscreenButton: true,
+        loop: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-            child: Icon(icon, color: Theme.of(context).primaryColor, size: 28),
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: YoutubePlayer(controller: _controller),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ProductDetailScreen(product: widget.product)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                widget.product.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -362,7 +457,7 @@ class _ProductCard extends StatelessWidget {
                 children: [
                   Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text('₹${product.price.toStringAsFixed(0)}', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(CurrencyHelper.format(product.price), style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,

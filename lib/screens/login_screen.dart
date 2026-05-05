@@ -78,10 +78,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           final user = await authService.signInWithGoogle();
                           if (user == null && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Sign-in failed or cancelled.')),
+                              const SnackBar(
+                                content: Text('Sign-in cancelled or failed. Please check if your popup was blocked.'),
+                                duration: Duration(seconds: 5),
+                              ),
                             );
                           }
-                          // Navigation is now handled by the listener in initState
+                        } catch (e) {
+                          String message = 'An error occurred';
+                          if (e is FirebaseAuthException) {
+                            message = 'Error (${e.code}): ${e.message}';
+                          } else {
+                            message = 'Error: $e';
+                          }
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          }
                         } finally {
                           if (mounted) {
                             setState(() {

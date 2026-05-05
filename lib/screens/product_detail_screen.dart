@@ -6,6 +6,7 @@ import '../models/product.dart';
 import '../models/order.dart';
 import '../services/firestore_service.dart';
 import '../services/razorpay_service.dart';
+import '../services/currency_helper.dart';
 import 'login_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -135,6 +136,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _showFullScreenImage(BuildContext context, String url) {
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -195,13 +197,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Image.network(
                   widget.product.imageUrl,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    widget.product.type == ProductType.camera
-                        ? Icons.camera_alt
-                        : (widget.product.type == ProductType.xRay ? Icons.flash_on : Icons.biotech),
-                    size: 100,
-                    color: Colors.grey.shade300,
-                  ),
+                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -217,7 +213,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '₹${widget.product.price.toStringAsFixed(0)}',
+                            CurrencyHelper.format(widget.product.price),
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -270,6 +266,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 child: Image.network(
                                   widget.product.imageGallery[index],
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                                 ),
                               ),
                             ),
@@ -301,13 +298,157 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     style: const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Features and Specs...
+
+                  // Bullet Specifications
+                  if (widget.product.specs.isNotEmpty) ...[
+                    const Text('Key Specifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    ...widget.product.specs.map((spec) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 6.0),
+                            child: Icon(Icons.circle, size: 6, color: Color(0xFFD32F2F)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(spec, style: const TextStyle(fontSize: 15, color: Colors.black87))),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: 32),
+                  ],
+
+                  // Product Features (Detailed)
+                  if (widget.product.features.isNotEmpty) ...[
+                    const Text('Product Features', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    ...widget.product.features.map((feature) => _FeatureTile(feature: feature)),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Technical Data Table
+                  if (widget.product.comparableSpecs.isNotEmpty) ...[
+                    const Text('Technical Data', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Table(
+                          columnWidths: const {
+                            0: FlexColumnWidth(2),
+                            1: FlexColumnWidth(3),
+                          },
+                          children: widget.product.comparableSpecs.entries.map((e) {
+                            final isEven = widget.product.comparableSpecs.keys.toList().indexOf(e.key) % 2 == 0;
+                            return TableRow(
+                              decoration: BoxDecoration(
+                                color: isEven ? Colors.grey.shade50 : Colors.white,
+                              ),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(e.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54)),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(e.value, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _handleAddToCart(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Color(0xFFD32F2F)),
+                    foregroundColor: const Color(0xFFD32F2F),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('ADD TO CART', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : () => _handleBuyNow(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD32F2F),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: _isProcessing 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('BUY NOW', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureTile extends StatelessWidget {
+  final ProductFeature feature;
+  const _FeatureTile({required this.feature});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (feature.imageUrl != null && feature.imageUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                feature.imageUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+              ),
+            ),
+          const SizedBox(height: 12),
+          Text(feature.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(
+            feature.description,
+            style: TextStyle(fontSize: 15, color: Colors.grey.shade700, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          const Divider(),
+        ],
       ),
     );
   }

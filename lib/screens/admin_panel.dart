@@ -5,6 +5,8 @@ import 'add_product_screen.dart';
 import 'manage_inventory_screen.dart';
 import 'orders_screen.dart';
 import 'payment_settings_screen.dart';
+import 'product_summary_screen.dart';
+import 'product_guide_admin_screen.dart';
 
 class AdminPanel extends StatelessWidget {
   const AdminPanel({super.key});
@@ -66,6 +68,26 @@ class AdminPanel extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ManageInventoryScreen()),
+                );
+              },
+            ),
+            _AdminActionTile(
+              icon: Icons.table_chart_outlined,
+              title: 'Product Summary Table',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProductSummaryScreen()),
+                );
+              },
+            ),
+            _AdminActionTile(
+              icon: Icons.help_outline,
+              title: 'Manage Product Guide',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProductGuideAdminScreen()),
                 );
               },
             ),
