@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'models/product.dart';
+import 'models/workflow_demo.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
@@ -237,6 +238,36 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ],
+
+                // Workflow Demos Section
+                StreamBuilder<List<WorkflowDemo>>(
+                  stream: _firestoreService.getWorkflowDemos(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+                    final demos = snapshot.data!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+                          child: Text('Workflow Demos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ),
+                        SizedBox(
+                          height: 220,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: demos.length,
+                            itemBuilder: (context, index) {
+                              return _WorkflowVideoItem(demo: demos[index]);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 // Featured Products
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -321,27 +352,34 @@ class _ProductVideoItemState extends State<_ProductVideoItem> {
   @override
   void initState() {
     super.initState();
-    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!)!;
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: videoId,
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        mute: false,
-        showControls: true,
-        showFullscreenButton: true,
-        loop: true,
-      ),
-    );
+    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!);
+    if (videoId != null) {
+      _controller = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: false,
+        params: const YoutubePlayerParams(
+          mute: false,
+          showControls: true,
+          showFullscreenButton: true,
+          loop: true,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.close();
+    if (mounted) {
+      _controller.close();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!);
+    if (videoId == null) return const SizedBox.shrink();
+
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
@@ -380,6 +418,88 @@ class _ProductVideoItemState extends State<_ProductVideoItem> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkflowVideoItem extends StatefulWidget {
+  final WorkflowDemo demo;
+  const _WorkflowVideoItem({required this.demo});
+
+  @override
+  State<_WorkflowVideoItem> createState() => _WorkflowVideoItemState();
+}
+
+class _WorkflowVideoItemState extends State<_WorkflowVideoItem> {
+  late YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final videoId = YoutubePlayerController.convertUrlToId(widget.demo.videoUrl);
+    if (videoId != null) {
+      _controller = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: false,
+        params: const YoutubePlayerParams(
+          mute: false,
+          showControls: true,
+          showFullscreenButton: true,
+          loop: true,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    if (mounted) {
+      _controller.close();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final videoId = YoutubePlayerController.convertUrlToId(widget.demo.videoUrl);
+    if (videoId == null) return const SizedBox.shrink();
+
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: YoutubePlayer(controller: _controller),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              widget.demo.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product.dart';
 import '../models/order.dart';
 import '../models/app_config.dart';
+import '../models/workflow_demo.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -18,6 +19,28 @@ class FirestoreService {
 
   Future<void> updateAppConfig(AppConfig config) async {
     await _db.collection('settings').doc('app_config').set(config.toMap());
+  }
+
+  // --- Workflow Demo Operations ---
+
+  Future<void> addWorkflowDemo(String title, String videoUrl) async {
+    await _db.collection('workflow_demos').add({
+      'title': title,
+      'videoUrl': videoUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<WorkflowDemo>> getWorkflowDemos() {
+    return _db.collection('workflow_demos').orderBy('createdAt', descending: true).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return WorkflowDemo.fromFirestore(doc.id, doc.data());
+      }).toList();
+    });
+  }
+
+  Future<void> deleteWorkflowDemo(String id) async {
+    await _db.collection('workflow_demos').doc(id).delete();
   }
 
   // --- Product Operations ---

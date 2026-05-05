@@ -7,6 +7,7 @@ import 'orders_screen.dart';
 import 'payment_settings_screen.dart';
 import 'product_summary_screen.dart';
 import 'product_guide_admin_screen.dart';
+import 'workflow_demos_admin_screen.dart';
 
 class AdminPanel extends StatelessWidget {
   const AdminPanel({super.key});
@@ -88,6 +89,16 @@ class AdminPanel extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ProductGuideAdminScreen()),
+                );
+              },
+            ),
+            _AdminActionTile(
+              icon: Icons.video_library_outlined,
+              title: 'Manage Workflow Demos',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WorkflowDemosAdminScreen()),
                 );
               },
             ),
