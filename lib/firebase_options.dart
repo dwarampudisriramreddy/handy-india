@@ -74,7 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '715649918086',
     projectId: 'handy-e3d10',
     storageBucket: 'handy-e3d10.firebasestorage.app',
-    iosBundleId: 'com.example.handy',
+    iosBundleId: 'com.ram.handyindia',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
