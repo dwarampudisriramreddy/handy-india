@@ -102,6 +102,9 @@ class _WorkflowDemosAdminScreenState extends State<WorkflowDemosAdminScreen> {
             child: StreamBuilder<List<WorkflowDemo>>(
               stream: _firestoreService.getWorkflowDemos(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -110,19 +113,29 @@ class _WorkflowDemosAdminScreenState extends State<WorkflowDemosAdminScreen> {
                 }
 
                 final demos = snapshot.data!;
-                return ListView.builder(
-                  itemCount: demos.length,
-                  itemBuilder: (context, index) {
-                    final demo = demos[index];
-                    return ListTile(
-                      title: Text(demo.title),
-                      subtitle: Text(demo.videoUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _firestoreService.deleteWorkflowDemo(demo.id),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text('Found ${demos.length} demos', style: const TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: demos.length,
+                        itemBuilder: (context, index) {
+                          final demo = demos[index];
+                          return ListTile(
+                            title: Text(demo.title),
+                            subtitle: Text(demo.videoUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _firestoreService.deleteWorkflowDemo(demo.id),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 );
               },
             ),

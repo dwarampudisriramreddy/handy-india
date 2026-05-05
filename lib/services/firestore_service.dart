@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product.dart';
 import '../models/order.dart';
 import '../models/app_config.dart';
@@ -33,6 +34,7 @@ class FirestoreService {
 
   Stream<List<WorkflowDemo>> getWorkflowDemos() {
     return _db.collection('workflow_demos').orderBy('createdAt', descending: true).snapshots().map((snapshot) {
+      debugPrint('Firestore Debug: Found ${snapshot.docs.length} workflow demos');
       return snapshot.docs.map((doc) {
         return WorkflowDemo.fromFirestore(doc.id, doc.data());
       }).toList();

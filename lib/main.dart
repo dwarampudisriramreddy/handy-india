@@ -225,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text('Product Demos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   SizedBox(
-                    height: 220,
+                    height: 240,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -243,6 +243,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 StreamBuilder<List<WorkflowDemo>>(
                   stream: _firestoreService.getWorkflowDemos(),
                   builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      debugPrint('Workflow Demos Error: ${snapshot.error}');
+                      return const SizedBox.shrink();
+                    }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
                     final demos = snapshot.data!;
                     return Column(
@@ -253,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Text('Workflow Demos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                         SizedBox(
-                          height: 220,
+                          height: 240,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -349,10 +353,24 @@ class _ProductVideoItem extends StatefulWidget {
 class _ProductVideoItemState extends State<_ProductVideoItem> {
   late YoutubePlayerController _controller;
 
+  String? _extractVideoId(String url) {
+    if (url.isEmpty) return null;
+    final videoId = YoutubePlayerController.convertUrlToId(url);
+    if (videoId != null) return videoId;
+
+    // Fallback for formats that convertUrlToId might miss (like some Shorts formats)
+    final regex = RegExp(
+      r'^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})',
+      caseSensitive: false,
+    );
+    final match = regex.firstMatch(url);
+    return match?.group(1);
+  }
+
   @override
   void initState() {
     super.initState();
-    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!);
+    final videoId = _extractVideoId(widget.product.videoUrl!);
     if (videoId != null) {
       _controller = YoutubePlayerController.fromVideoId(
         videoId: videoId,
@@ -370,16 +388,18 @@ class _ProductVideoItemState extends State<_ProductVideoItem> {
   @override
   void dispose() {
     if (mounted) {
-      _controller.close();
+      final videoId = _extractVideoId(widget.product.videoUrl!);
+      if (videoId != null) {
+        _controller.close();
+      }
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final videoId = YoutubePlayerController.convertUrlToId(widget.product.videoUrl!);
-    if (videoId == null) return const SizedBox.shrink();
-
+    final videoId = _extractVideoId(widget.product.videoUrl!);
+    
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
@@ -402,7 +422,12 @@ class _ProductVideoItemState extends State<_ProductVideoItem> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: YoutubePlayer(controller: _controller),
+              child: videoId != null 
+                  ? YoutubePlayer(controller: _controller)
+                  : Container(
+                      color: Colors.grey.shade100,
+                      child: const Center(child: Icon(Icons.video_library_outlined, color: Colors.grey)),
+                    ),
             ),
           ),
           GestureDetector(
@@ -437,10 +462,23 @@ class _WorkflowVideoItem extends StatefulWidget {
 class _WorkflowVideoItemState extends State<_WorkflowVideoItem> {
   late YoutubePlayerController _controller;
 
+  String? _extractVideoId(String url) {
+    if (url.isEmpty) return null;
+    final videoId = YoutubePlayerController.convertUrlToId(url);
+    if (videoId != null) return videoId;
+
+    final regex = RegExp(
+      r'^(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})',
+      caseSensitive: false,
+    );
+    final match = regex.firstMatch(url);
+    return match?.group(1);
+  }
+
   @override
   void initState() {
     super.initState();
-    final videoId = YoutubePlayerController.convertUrlToId(widget.demo.videoUrl);
+    final videoId = _extractVideoId(widget.demo.videoUrl);
     if (videoId != null) {
       _controller = YoutubePlayerController.fromVideoId(
         videoId: videoId,
@@ -458,16 +496,18 @@ class _WorkflowVideoItemState extends State<_WorkflowVideoItem> {
   @override
   void dispose() {
     if (mounted) {
-      _controller.close();
+      final videoId = _extractVideoId(widget.demo.videoUrl);
+      if (videoId != null) {
+        _controller.close();
+      }
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final videoId = YoutubePlayerController.convertUrlToId(widget.demo.videoUrl);
-    if (videoId == null) return const SizedBox.shrink();
-
+    final videoId = _extractVideoId(widget.demo.videoUrl);
+    
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
@@ -490,7 +530,28 @@ class _WorkflowVideoItemState extends State<_WorkflowVideoItem> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: YoutubePlayer(controller: _controller),
+              child: videoId != null 
+                  ? YoutubePlayer(controller: _controller)
+                  : Container(
+                      color: Colors.grey.shade100,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.video_library_outlined, color: Colors.grey),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.demo.videoUrl, 
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
             ),
           ),
           Padding(
